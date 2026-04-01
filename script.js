@@ -1,29 +1,18 @@
-window.onload = () => {
-  loadImages();
-};
-
-async function loadImages() {
+async function generate() {
   try {
-    // ① 1枚目
-    const res1 = await fetch("/api/generate");
-    const data1 = await res1.json();
+    const res = await fetch("/api/generate");
+    const data = await res.json();
 
-    document.getElementById("img1").src = data1.output?.[0] || "";
+    console.log(data);
 
-    // ⏳ 少し待つ（超重要）
-    await new Promise(r => setTimeout(r, 8000));
+    if (data.image) {
+      document.getElementById("img").src = data.image;
+    } else {
+      alert("エラー: " + JSON.stringify(data));
+    }
 
-    // ② 2枚目
-    const res2 = await fetch("/api/generate");
-    const data2 = await res2.json();
-
-    document.getElementById("img2").src = data2.output?.[0] || "";
-
-  } catch (error) {
-    console.error("エラー:", error);
+  } catch (e) {
+    console.error(e);
+    alert("通信エラー");
   }
-}
-
-function choose(num) {
-  loadImages();
 }

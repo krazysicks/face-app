@@ -14,24 +14,23 @@ function getMost(arr) {
 }
 
 // AI画像生成URL
-function generateFace() {
+async function generateFace() {
   const preferred = getMost(preference.country);
 
-  const prompt = `beautiful ${preferred} woman portrait, realistic, 4k`;
+  const prompt = `beautiful ${preferred} woman portrait`;
 
-  return `/api/generate?prompt=${encodeURIComponent(prompt)}&t=${Date.now()}`;
+  const res = await fetch(`/api/generate?prompt=${encodeURIComponent(prompt)}`);
+  const data = await res.json();
+
+  return data.image;
 }
 
-// 画像表示
-function generateImages() {
+async function generateImages() {
   const el1 = document.getElementById("img1");
   const el2 = document.getElementById("img2");
 
-  el1.src = generateFace();
-  el2.src = generateFace();
-
-  el1.classList.remove("selected", "loser");
-  el2.classList.remove("selected", "loser");
+  el1.src = await generateFace();
+  el2.src = await generateFace();
 }
 
 // 選択

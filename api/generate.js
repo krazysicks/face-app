@@ -14,7 +14,7 @@ export default async function handler(req, res) {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        version: "ここにAPIタブでコピーしたやつ",
+        version: "33279060bbbb8858700eb2146350a98d96ef334fcf817f37eb05915e1534aa1c",
         input: {
           prompt: "photorealistic portrait of a japanese woman, realistic skin, natural lighting, 85mm lens"
         }

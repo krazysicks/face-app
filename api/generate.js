@@ -6,7 +6,6 @@ export default async function handler(req, res) {
   }
 
   try {
-    // ① 生成開始
     const startRes = await fetch("https://api.replicate.com/v1/predictions", {
       method: "POST",
       headers: {
@@ -14,7 +13,7 @@ export default async function handler(req, res) {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        version: "db21e45b3f3e9b6a4b7c6a9d1d0e5f8c9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4",
+        version: "ac732df83cea7fff8b46c8c0d4b4fdbd7b9d2f9c7e8e7c3e6c6c9f3a4b5c6d7e",
         input: {
           prompt: "beautiful japanese woman, realistic face, portrait, high quality",
           width: 512,
@@ -31,7 +30,6 @@ export default async function handler(req, res) {
 
     let result;
 
-    // ② 待機（最大30秒）
     for (let i = 0; i < 15; i++) {
       await new Promise(r => setTimeout(r, 2000));
 

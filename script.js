@@ -7,16 +7,47 @@ let preference = {
 
 let currentData = [];
 
-async function generateFace() {
-  const res = await fetch("https://randomuser.me/api/?gender=female");
+// 🔥 徐々に80%まで寄せる
+function getBoost() {
+  return Math.min(0.8, (count / 10) * 0.8);
+}
+
+// 一番多い国を取得
+function getMost(arr) {
+  if (arr.length === 0) return null;
+
+  return arr.sort((a, b) =>
+    arr.filter(v => v === a).length - arr.filter(v => v === b).length
+  ).pop();
+}
+
+// 平均年齢
+function getAverage(arr) {
+  return Math.round(arr.reduce((a, b) => a + b, 0) / arr.length);
+}
+
+// 顔生成（80%で好みに寄せる）
+async function generateFace(preferredCountry = null) {
+  let url = "https://randomuser.me/api/?gender=female";
+
+  const boost = getBoost();
+
+  if (preferredCountry && Math.random() < boost) {
+    url += `&nat=${preferredCountry}`;
+  }
+
+  const res = await fetch(url);
   const data = await res.json();
 
   return data.results[0];
 }
 
+// 画像表示
 async function generateImages() {
-  const data1 = await generateFace();
-  const data2 = await generateFace();
+  const preferredCountry = getMost(preference.country);
+
+  const data1 = await generateFace(preferredCountry);
+  const data2 = await generateFace(preferredCountry);
 
   currentData = [data1, data2];
 
@@ -30,10 +61,11 @@ async function generateImages() {
   el2.classList.remove("selected", "loser");
 }
 
+// 選択
 function choose(side) {
   const selected = currentData[side - 1];
 
-  // 👇 好みを記録
+  // 👇 学習
   preference.age.push(selected.dob.age);
   preference.country.push(selected.nat);
 
@@ -59,16 +91,7 @@ function choose(side) {
   }, 500);
 }
 
-function getAverage(arr) {
-  return Math.round(arr.reduce((a, b) => a + b, 0) / arr.length);
-}
-
-function getMost(arr) {
-  return arr.sort((a,b) =>
-    arr.filter(v => v === a).length - arr.filter(v => v === b).length
-  ).pop();
-}
-
+// 結果表示
 function showResult() {
   document.getElementById("game").style.display = "none";
   document.getElementById("result").style.display = "block";
@@ -77,13 +100,18 @@ function showResult() {
   const country = getMost(preference.country);
 
   const result = `
-平均年齢: ${avgAge}歳くらい
-好きな系統: ${country}系
+あなたの好み分析結果👇
+
+・平均年齢：${avgAge}歳
+・好きな系統：${country}
+
+※後半ほどあなたの好みに80%寄せています
 `;
 
   document.getElementById("resultText").innerText = result;
 }
 
+// リスタート
 function restart() {
   count = 0;
   preference = { age: [], country: [] };
@@ -94,4 +122,5 @@ function restart() {
   generateImages();
 }
 
+// 初期表示
 generateImages();

@@ -14,7 +14,7 @@ export default async function handler(req, res) {
       },
       body: JSON.stringify({
         // 👇 とりあえず軽いモデル（重要）
-        version: "a9758cbf7a7c9d8c8f9c8c7e7f6e5d4c3b2a19087654321abcdefabcdef1234",
+        version: "7762fd07cf82c948538e41f63f77d685e02b063e37e496e96eefd46c929f9bdc",
         input: {
           prompt: "portrait photo of a beautiful japanese woman"
         }

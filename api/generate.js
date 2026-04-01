@@ -1,4 +1,3 @@
-
 export default async function handler(req, res) {
   const prompt = req.query.prompt || "beautiful woman";
 

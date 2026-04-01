@@ -4,21 +4,23 @@ window.onload = () => {
 
 async function loadImages() {
   try {
-    const res = await fetch("/api/generate");
-    const data = await res.json();
+    // ① 1枚目
+    const res1 = await fetch("/api/generate");
+    const data1 = await res1.json();
 
-    console.log(data); // 👈 ここ見る
+    document.getElementById("img1").src = data1.output?.[0] || "";
 
-    // 🔥 とりあえず仮表示
-    if (data.output && data.output[0]) {
-      document.getElementById("img1").src = data.output[0];
-      document.getElementById("img2").src = data.output[0];
-    } else {
-      alert("エラー:\n" + JSON.stringify(data, null, 2));
-    }
+    // ⏳ 少し待つ（超重要）
+    await new Promise(r => setTimeout(r, 8000));
+
+    // ② 2枚目
+    const res2 = await fetch("/api/generate");
+    const data2 = await res2.json();
+
+    document.getElementById("img2").src = data2.output?.[0] || "";
 
   } catch (error) {
-    console.error(error);
+    console.error("エラー:", error);
   }
 }
 

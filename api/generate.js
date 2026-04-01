@@ -6,14 +6,15 @@ export default async function handler(req, res) {
   }
 
   try {
-    const response = await fetch("https://api.replicate.com/v1/predictions", {
+    // ① 生成リクエスト
+    const startRes = await fetch("https://api.replicate.com/v1/predictions", {
       method: "POST",
       headers: {
         "Authorization": `Token ${token}`,
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        version: "stability-ai/sdxl", // とりあえずOK
+        version: "stability-ai/sdxl",
         input: {
           prompt: "beautiful japanese woman, realistic face, portrait, high quality",
           width: 512,
@@ -22,13 +23,39 @@ export default async function handler(req, res) {
       })
     });
 
-    const data = await response.json();
+    const startData = await startRes.json();
 
-    // 🔥 ここ超重要：画像URL取り出し
-    const image = data.output?.[0];
+    if (!startData.urls?.get) {
+      return res.status(500).json({ error: "生成開始失敗", startData });
+    }
+
+    let result;
+    let status = "starting";
+
+    // ② 完成するまで待つ（最大10回）
+    for (let i = 0; i < 10; i++) {
+      await new Promise(r => setTimeout(r, 1500)); // 1.5秒待機
+
+      const checkRes = await fetch(startData.urls.get, {
+        headers: {
+          "Authorization": `Token ${token}`
+        }
+      });
+
+      result = await checkRes.json();
+      status = result.status;
+
+      if (status === "succeeded") break;
+      if (status === "failed") {
+        return res.status(500).json({ error: "生成失敗", result });
+      }
+    }
+
+    // ③ 画像取得
+    const image = result?.output?.[0];
 
     if (!image) {
-      return res.status(500).json({ error: "画像生成失敗", data });
+      return res.status(500).json({ error: "画像取得失敗", result });
     }
 
     return res.status(200).json({ image });

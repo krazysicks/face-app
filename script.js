@@ -7,55 +7,35 @@ let preference = {
 
 let currentData = [];
 
-// 🔥 徐々に80%まで寄せる
+// 徐々に80%寄せる
 function getBoost() {
   return Math.min(0.8, (count / 10) * 0.8);
 }
 
-// 一番多い国を取得
+// 仮の好み（あとでAIに使う）
 function getMost(arr) {
   if (arr.length === 0) return null;
-
   return arr.sort((a, b) =>
     arr.filter(v => v === a).length - arr.filter(v => v === b).length
   ).pop();
 }
 
-// 平均年齢
-function getAverage(arr) {
-  return Math.round(arr.reduce((a, b) => a + b, 0) / arr.length);
-}
+// AI画像URL取得
+function generateFace() {
+  const preferred = getMost(preference.country) || "japanese";
 
-// 顔生成（80%で好みに寄せる）
-async function generateFace(preferredCountry = null) {
-  let url = "https://randomuser.me/api/?gender=female";
+  const prompt = `beautiful ${preferred} woman portrait, realistic, 4k`;
 
-  const boost = getBoost();
-
-  if (preferredCountry && Math.random() < boost) {
-    url += `&nat=${preferredCountry}`;
-  }
-
-  const res = await fetch(url);
-  const data = await res.json();
-
-  return data.results[0];
+  return `/api/generate?prompt=${encodeURIComponent(prompt)}`;
 }
 
 // 画像表示
-async function generateImages() {
-  const preferredCountry = getMost(preference.country);
-
-  const data1 = await generateFace(preferredCountry);
-  const data2 = await generateFace(preferredCountry);
-
-  currentData = [data1, data2];
-
+function generateImages() {
   const el1 = document.getElementById("img1");
   const el2 = document.getElementById("img2");
 
-  el1.src = data1.picture.large;
-  el2.src = data2.picture.large;
+  el1.src = generateFace();
+  el2.src = generateFace();
 
   el1.classList.remove("selected", "loser");
   el2.classList.remove("selected", "loser");
@@ -63,11 +43,10 @@ async function generateImages() {
 
 // 選択
 function choose(side) {
-  const selected = currentData[side - 1];
+  const fakeCountry = ["japanese", "korean", "american"];
 
-  // 👇 学習
-  preference.age.push(selected.dob.age);
-  preference.country.push(selected.nat);
+  // 仮でランダム学習（ここ後で精度上げれる）
+  preference.country.push(fakeCountry[Math.floor(Math.random() * 3)]);
 
   const img1 = document.getElementById("img1");
   const img2 = document.getElementById("img2");
@@ -91,24 +70,15 @@ function choose(side) {
   }, 500);
 }
 
-// 結果表示
+// 結果
 function showResult() {
   document.getElementById("game").style.display = "none";
   document.getElementById("result").style.display = "block";
 
-  const avgAge = getAverage(preference.age);
   const country = getMost(preference.country);
 
-  const result = `
-あなたの好み分析結果👇
-
-・平均年齢：${avgAge}歳
-・好きな系統：${country}
-
-※後半ほどあなたの好みに80%寄せています
-`;
-
-  document.getElementById("resultText").innerText = result;
+  document.getElementById("resultText").innerText =
+    `あなたは「${country}系」の顔が好きです`;
 }
 
 // リスタート
@@ -122,5 +92,4 @@ function restart() {
   generateImages();
 }
 
-// 初期表示
 generateImages();

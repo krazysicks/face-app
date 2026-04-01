@@ -1,7 +1,7 @@
 let count = 0;
 
 async function generateFace() {
-  const res = await fetch("https://randomuser.me/api/");
+  const res = await fetch("https://randomuser.me/api/?gender=female");
   const data = await res.json();
 
   return data.results[0].picture.large;

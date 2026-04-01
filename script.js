@@ -1,32 +1,25 @@
 let count = 0;
 
 let preference = {
-  age: [],
   country: []
 };
 
-let currentData = [];
-
-// 徐々に80%寄せる
-function getBoost() {
-  return Math.min(0.8, (count / 10) * 0.8);
-}
-
-// 仮の好み（あとでAIに使う）
+// 一番多い好み
 function getMost(arr) {
-  if (arr.length === 0) return null;
+  if (arr.length === 0) return "japanese";
+
   return arr.sort((a, b) =>
     arr.filter(v => v === a).length - arr.filter(v => v === b).length
   ).pop();
 }
 
-// AI画像URL取得
+// AI画像生成URL
 function generateFace() {
-  const preferred = getMost(preference.country) || "japanese";
+  const preferred = getMost(preference.country);
 
   const prompt = `beautiful ${preferred} woman portrait, realistic, 4k`;
 
-  return `/api/generate?prompt=${encodeURIComponent(prompt)}`;
+  return `/api/generate?prompt=${encodeURIComponent(prompt)}&t=${Date.now()}`;
 }
 
 // 画像表示
@@ -45,7 +38,7 @@ function generateImages() {
 function choose(side) {
   const fakeCountry = ["japanese", "korean", "american"];
 
-  // 仮でランダム学習（ここ後で精度上げれる）
+  // 仮学習
   preference.country.push(fakeCountry[Math.floor(Math.random() * 3)]);
 
   const img1 = document.getElementById("img1");
@@ -84,7 +77,7 @@ function showResult() {
 // リスタート
 function restart() {
   count = 0;
-  preference = { age: [], country: [] };
+  preference = { country: [] };
 
   document.getElementById("game").style.display = "flex";
   document.getElementById("result").style.display = "none";

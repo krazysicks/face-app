@@ -2,14 +2,16 @@ let images = [];
 
 export default async function handler(req, res) {
 
-  // 取得
   if (req.method === "GET") {
     return res.status(200).json({ images });
   }
 
-  // 追加
   if (req.method === "POST") {
     const { url } = req.body;
+
+    if (!url) {
+      return res.status(400).json({ error: "URLない" });
+    }
 
     images.push({
       id: Date.now() + Math.random(),
@@ -17,20 +19,20 @@ export default async function handler(req, res) {
       score: 0
     });
 
+    console.log("追加:", url);
+
     return res.status(200).json({ ok: true });
   }
 
-  // スコア更新
   if (req.method === "PUT") {
     const { winner, loser } = req.body;
 
     const w = images.find(i => i.id === winner);
     const l = images.find(i => i.id === loser);
 
-    if (w) w.score += 1;
-    if (l) l.score -= 1;
+    if (w) w.score++;
+    if (l) l.score--;
 
-    // 弱い個体削除（淘汰）
     images = images.filter(img => img.score > -3);
 
     return res.status(200).json({ ok: true });

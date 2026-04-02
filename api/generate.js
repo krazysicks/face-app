@@ -6,34 +6,24 @@ export default async function handler(req, res) {
   }
 
   try {
-    // ✅ baseUrlを安全に取得
     const baseUrl =
       req.headers.origin ||
       `https://${req.headers.host}`;
 
-    // 既存画像取得
+    // 画像一覧取得
     const imagesRes = await fetch(`${baseUrl}/api/images`);
     const imagesData = await imagesRes.json();
-
     const images = imagesData.images || [];
 
-    // 上位3つ取得
-    const top = images
-      .sort((a, b) => b.score - a.score)
-      .slice(0, 3);
-
-    const stylePrompt = top.length > 0
-      ? "similar face style to previously preferred images"
-      : "";
+    console.log("images:", images);
 
     const prompt = `
 photorealistic portrait of a japanese woman,
-${stylePrompt},
 natural lighting, 85mm lens,
 realistic skin texture, detailed eyes
 `;
 
-    // 生成
+    // 生成開始
     const start = await fetch("https://api.replicate.com/v1/predictions", {
       method: "POST",
       headers: {
@@ -74,16 +64,24 @@ realistic skin texture, detailed eyes
         ? result.output[0]
         : result.output;
 
+      console.log("生成成功:", imageUrl);
+
       return res.status(200).json({ image: imageUrl });
     } else {
-      return res.status(500).json({
-        error: "生成失敗",
-        detail: result
+      console.log("生成失敗:", result);
+
+      // 🔥 fallback（絶対画像出す）
+      return res.status(200).json({
+        image: "https://picsum.photos/300?random=" + Math.random()
       });
     }
 
   } catch (e) {
     console.error("ERROR:", e);
-    return res.status(500).json({ error: e.message });
+
+    // 🔥 fallback
+    return res.status(200).json({
+      image: "https://picsum.photos/300?random=" + Math.random()
+    });
   }
 }

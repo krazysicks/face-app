@@ -24,10 +24,10 @@ export default async function handler(req, res) {
       : "";
 
     const prompt = `
-portrait photo of a japanese woman,
+photorealistic portrait of a japanese woman,
 ${stylePrompt},
-natural lighting, realistic face, 85mm lens,
-clean skin, detailed eyes
+natural lighting, 85mm lens,
+realistic skin texture, detailed eyes
 `;
 
     // 生成開始
@@ -38,12 +38,15 @@ clean skin, detailed eyes
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        version: "33279060bbbb8858700eb2146350a98d96ef334fcf817f37eb05915e1534aa1c",
-        input: { prompt }
+        version: "39ed52f2a78e9341e0d2e6c2f1f7a196ee83fed3673d299c92c45ea1ab696648",
+        input: {
+          prompt: prompt
+        }
       })
     });
 
     const startData = await start.json();
+    console.log("START:", startData);
 
     if (!startData.urls?.get) {
       return res.status(500).json({ error: "開始失敗", detail: startData });
@@ -52,7 +55,7 @@ clean skin, detailed eyes
     const getUrl = startData.urls.get;
 
     let result;
-    for (let i = 0; i < 15; i++) {
+    for (let i = 0; i < 20; i++) {
       await new Promise(r => setTimeout(r, 1500));
 
       const check = await fetch(getUrl, {
@@ -60,15 +63,18 @@ clean skin, detailed eyes
       });
 
       result = await check.json();
+      console.log("RESULT:", result);
 
       if (result.status === "succeeded") break;
     }
 
     if (result.status === "succeeded") {
+      const imageUrl = Array.isArray(result.output)
+        ? result.output[0]
+        : result.output;
+
       return res.status(200).json({
-        image: Array.isArray(result.output)
-          ? result.output[0]
-          : result.output
+        image: imageUrl
       });
     } else {
       return res.status(500).json({
@@ -78,8 +84,7 @@ clean skin, detailed eyes
     }
 
   } catch (e) {
+    console.error("ERROR:", e);
     return res.status(500).json({ error: e.message });
-    console.log("START:", startData);
-console.log("RESULT:", result);
   }
 }

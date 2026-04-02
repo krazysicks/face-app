@@ -1,18 +1,17 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html>
 <head>
   <meta charset="UTF-8">
-  <title>AI顔生成</title>
+  <title>顔診断</title>
 </head>
 <body>
 
-  <h1>AI顔生成</h1>
+  <h1>どっちが好み？</h1>
 
-  <button onclick="generate()">生成</button>
-
-  <br><br>
-
-  <img id="img" width="300" />
+  <div style="display:flex; gap:20px;">
+    <img id="img1" width="200" onclick="choose(0)">
+    <img id="img2" width="200" onclick="choose(1)">
+  </div>
 
   <script src="script.js"></script>
 </body>

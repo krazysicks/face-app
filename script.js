@@ -14,9 +14,11 @@ function showImage(n, url) {
   const loader = document.getElementById("loader" + n);
   const error = document.getElementById("error" + n);
 
-  loader.style.display = "block";
-  img.style.display = "none";
-  error.style.display = "none";
+  if (!url) {
+    loader.style.display = "none";
+    error.style.display = "block";
+    return;
+  }
 
   img.onload = () => {
     loader.style.display = "none";
@@ -37,26 +39,17 @@ async function loadImages() {
   let res = await fetch("/api/images");
   let data = await res.json();
 
-  let tries = 0;
-  const generationChance = Math.max(0.3, 1 - data.images.length * 0.1);
-
-  while (data.images.length < 5 && tries < 5) {
-    tries++;
-
-    if (Math.random() > generationChance) break;
-
+  while (data.images.length < 2) {
     const gen = await fetch("/api/generate");
     const g = await gen.json();
 
     console.log("生成:", g);
 
-    if (g.image) {
-      await fetch("/api/images", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: g.image })
-      });
-    }
+    await fetch("/api/images", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url: g.image })
+    });
 
     res = await fetch("/api/images");
     data = await res.json();
@@ -65,8 +58,10 @@ async function loadImages() {
   const shuffled = [...data.images].sort(() => 0.5 - Math.random());
   currentImages = shuffled.slice(0, 2);
 
-  if (currentImages[0]) showImage(1, currentImages[0].url);
-  if (currentImages[1]) showImage(2, currentImages[1].url);
+  console.log("表示:", currentImages);
+
+  showImage(1, currentImages[0]?.url);
+  showImage(2, currentImages[1]?.url);
 
   document.getElementById("img1").onclick = () => choose(0);
   document.getElementById("img2").onclick = () => choose(1);

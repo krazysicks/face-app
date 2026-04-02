@@ -1,13 +1,43 @@
 let currentImages = [];
 let loading = false;
 
+function showLoading() {
+  ["1", "2"].forEach(n => {
+    document.getElementById("loader" + n).style.display = "block";
+    document.getElementById("img" + n).style.display = "none";
+    document.getElementById("error" + n).style.display = "none";
+  });
+}
+
+function showImage(n, url) {
+  const img = document.getElementById("img" + n);
+  const loader = document.getElementById("loader" + n);
+  const error = document.getElementById("error" + n);
+
+  loader.style.display = "block";
+  img.style.display = "none";
+  error.style.display = "none";
+
+  img.onload = () => {
+    loader.style.display = "none";
+    img.style.display = "block";
+  };
+
+  img.onerror = () => {
+    loader.style.display = "none";
+    error.style.display = "block";
+  };
+
+  img.src = url;
+}
+
 async function loadImages() {
+  showLoading();
+
   let res = await fetch("/api/images");
   let data = await res.json();
 
   let tries = 0;
-
-  // 生成確率（徐々に減らす）
   const generationChance = Math.max(0.3, 1 - data.images.length * 0.1);
 
   while (data.images.length < 5 && tries < 5) {
@@ -32,12 +62,11 @@ async function loadImages() {
     data = await res.json();
   }
 
-  // ランダム2枚
   const shuffled = [...data.images].sort(() => 0.5 - Math.random());
   currentImages = shuffled.slice(0, 2);
 
-  document.getElementById("img1").src = currentImages[0]?.url || "";
-  document.getElementById("img2").src = currentImages[1]?.url || "";
+  if (currentImages[0]) showImage(1, currentImages[0].url);
+  if (currentImages[1]) showImage(2, currentImages[1].url);
 
   document.getElementById("img1").onclick = () => choose(0);
   document.getElementById("img2").onclick = () => choose(1);
@@ -49,6 +78,8 @@ async function choose(index) {
 
   const winner = currentImages[index];
   const loser = currentImages[index === 0 ? 1 : 0];
+
+  showLoading();
 
   await fetch("/api/images", {
     method: "PUT",

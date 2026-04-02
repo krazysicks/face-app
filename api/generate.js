@@ -7,7 +7,7 @@ export default async function handler(req, res) {
 
   try {
     // 既存画像取得
-    const baseUrl = process.env.BASE_URL || "http://localhost:3000";
+    const baseUrl = req.headers.origin;
     const imagesRes = await fetch(`${baseUrl}/api/images`);
     const imagesData = await imagesRes.json();
 

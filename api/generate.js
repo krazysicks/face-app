@@ -6,8 +6,12 @@ export default async function handler(req, res) {
   }
 
   try {
+    // ✅ baseUrlを安全に取得
+    const baseUrl =
+      req.headers.origin ||
+      `https://${req.headers.host}`;
+
     // 既存画像取得
-    const baseUrl = req.headers.origin;
     const imagesRes = await fetch(`${baseUrl}/api/images`);
     const imagesData = await imagesRes.json();
 
@@ -18,7 +22,6 @@ export default async function handler(req, res) {
       .sort((a, b) => b.score - a.score)
       .slice(0, 3);
 
-    // プロンプト強化
     const stylePrompt = top.length > 0
       ? "similar face style to previously preferred images"
       : "";
@@ -30,7 +33,7 @@ natural lighting, 85mm lens,
 realistic skin texture, detailed eyes
 `;
 
-    // 生成開始
+    // 生成
     const start = await fetch("https://api.replicate.com/v1/predictions", {
       method: "POST",
       headers: {
@@ -38,10 +41,8 @@ realistic skin texture, detailed eyes
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        version: "39ed52f2a78e9341e0d2e6c2f1f7a196ee83fed3673d299c92c45ea1ab696648",
-        input: {
-          prompt: prompt
-        }
+        version: "33279060bbbb8858700eb2146350a98d96ef334fcf817f37eb05915e1534aa1c",
+        input: { prompt }
       })
     });
 
@@ -73,9 +74,7 @@ realistic skin texture, detailed eyes
         ? result.output[0]
         : result.output;
 
-      return res.status(200).json({
-        image: imageUrl
-      });
+      return res.status(200).json({ image: imageUrl });
     } else {
       return res.status(500).json({
         error: "生成失敗",

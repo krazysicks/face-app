@@ -17,13 +17,19 @@ export default async function handler(req, res) {
 
     console.log("images:", images);
 
+    // 🔥 顔生成専用プロンプト（強化版）
     const prompt = `
-photorealistic portrait of a japanese woman,
-natural lighting, 85mm lens,
-realistic skin texture, detailed eyes
+ultra realistic portrait of a beautiful japanese woman,
+solo, looking at camera,
+symmetrical face, perfect face,
+natural skin texture, pores visible,
+sharp focus, 85mm lens, f1.8,
+soft lighting, studio lighting,
+high detail, photorealistic,
+no blur, no distortion
 `;
 
-    // 生成開始
+    // 🔥 生成開始（モデル変更済み）
     const start = await fetch("https://api.replicate.com/v1/predictions", {
       method: "POST",
       headers: {
@@ -31,8 +37,14 @@ realistic skin texture, detailed eyes
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        version: "33279060bbbb8858700eb2146350a98d96ef334fcf817f37eb05915e1534aa1c",
-        input: { prompt }
+        version: "ac732df83cea7fffcb7f3a2f4a9e3a5a3f9e6e4b07c6fba58828a741b93d7c5d",
+        input: {
+          prompt,
+          width: 512,
+          height: 768,
+          num_inference_steps: 30,
+          guidance_scale: 7.5
+        }
       })
     });
 
@@ -46,7 +58,7 @@ realistic skin texture, detailed eyes
     const getUrl = startData.urls.get;
 
     let result;
-    for (let i = 0; i < 20; i++) {
+    for (let i = 0; i < 25; i++) {
       await new Promise(r => setTimeout(r, 1500));
 
       const check = await fetch(getUrl, {
@@ -70,18 +82,18 @@ realistic skin texture, detailed eyes
     } else {
       console.log("生成失敗:", result);
 
-      // 🔥 fallback（絶対画像出す）
+      // fallback（必ず画像返す）
       return res.status(200).json({
-        image: "https://picsum.photos/300?random=" + Math.random()
+        image: "https://picsum.photos/512/768?random=" + Math.random()
       });
     }
 
   } catch (e) {
     console.error("ERROR:", e);
 
-    // 🔥 fallback
+    // fallback
     return res.status(200).json({
-      image: "https://picsum.photos/300?random=" + Math.random()
+      image: "https://picsum.photos/512/768?random=" + Math.random()
     });
   }
 }

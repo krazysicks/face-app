@@ -79,5 +79,7 @@ clean skin, detailed eyes
 
   } catch (e) {
     return res.status(500).json({ error: e.message });
+    console.log("START:", startData);
+console.log("RESULT:", result);
   }
 }

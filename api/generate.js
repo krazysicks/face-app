@@ -38,7 +38,7 @@ clean skin, detailed eyes
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        version: "←ここにモデルversion入れる",
+        version: "33279060bbbb8858700eb2146350a98d96ef334fcf817f37eb05915e1534aa1c",
         input: { prompt }
       })
     });

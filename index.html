@@ -17,14 +17,14 @@
       border: 1px solid #ccc;
     }
 
-    .box img {
+    img {
       width: 100%;
       height: 100%;
       object-fit: cover;
       display: none;
+      cursor: pointer;
     }
 
-    /* 🔄 ローディング */
     .loader {
       position: absolute;
       top: 50%;
@@ -39,7 +39,6 @@
     }
 
     @keyframes spin {
-      0% { transform: translate(-50%, -50%) rotate(0deg); }
       100% { transform: translate(-50%, -50%) rotate(360deg); }
     }
 
@@ -49,8 +48,6 @@
       left: 50%;
       transform: translate(-50%, -50%);
       color: red;
-      font-size: 12px;
-      text-align: center;
       display: none;
     }
   </style>
@@ -58,22 +55,22 @@
 
 <body>
 
-  <h1>どっちが好み？</h1>
+<h1>どっちが好み？</h1>
 
-  <div class="container">
-    <div class="box">
-      <div class="loader" id="loader1"></div>
-      <img id="img1">
-      <div class="error" id="error1">エラー</div>
-    </div>
-
-    <div class="box">
-      <div class="loader" id="loader2"></div>
-      <img id="img2">
-      <div class="error" id="error2">エラー</div>
-    </div>
+<div class="container">
+  <div class="box">
+    <div class="loader" id="loader1"></div>
+    <img id="img1">
+    <div class="error" id="error1">エラー</div>
   </div>
 
-  <script src="script.js"></script>
+  <div class="box">
+    <div class="loader" id="loader2"></div>
+    <img id="img2">
+    <div class="error" id="error2">エラー</div>
+  </div>
+</div>
+
+<script src="script.js"></script>
 </body>
 </html>

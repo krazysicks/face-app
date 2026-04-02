@@ -3,14 +3,75 @@
 <head>
   <meta charset="UTF-8">
   <title>顔診断</title>
+
+  <style>
+    .container {
+      display: flex;
+      gap: 20px;
+    }
+
+    .box {
+      width: 200px;
+      height: 200px;
+      position: relative;
+      border: 1px solid #ccc;
+    }
+
+    .box img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: none;
+    }
+
+    /* 🔄 ローディング */
+    .loader {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      border: 6px solid #eee;
+      border-top: 6px solid #333;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: translate(-50%, -50%) rotate(0deg); }
+      100% { transform: translate(-50%, -50%) rotate(360deg); }
+    }
+
+    .error {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: red;
+      font-size: 12px;
+      text-align: center;
+      display: none;
+    }
+  </style>
 </head>
+
 <body>
 
   <h1>どっちが好み？</h1>
 
-  <div style="display:flex; gap:20px;">
-    <img id="img1" width="200" style="cursor:pointer;">
-    <img id="img2" width="200" style="cursor:pointer;">
+  <div class="container">
+    <div class="box">
+      <div class="loader" id="loader1"></div>
+      <img id="img1">
+      <div class="error" id="error1">エラー</div>
+    </div>
+
+    <div class="box">
+      <div class="loader" id="loader2"></div>
+      <img id="img2">
+      <div class="error" id="error2">エラー</div>
+    </div>
   </div>
 
   <script src="script.js"></script>

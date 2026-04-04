@@ -1,25 +1,24 @@
-let images = [];
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_KEY
+);
 
 export default async function handler(req, res) {
 
   if (req.method === "GET") {
-    return res.status(200).json({ images });
+    const { data } = await supabase
+      .from('images')
+      .select('*');
+
+    return res.status(200).json({ images: data });
   }
 
   if (req.method === "POST") {
     const { url } = req.body;
 
-    if (!url) {
-      return res.status(400).json({ error: "URLない" });
-    }
-
-    images.push({
-      id: Date.now() + Math.random(),
-      url,
-      score: 0
-    });
-
-    console.log("追加:", url);
+    await supabase.from('images').insert({ url });
 
     return res.status(200).json({ ok: true });
   }
@@ -27,13 +26,10 @@ export default async function handler(req, res) {
   if (req.method === "PUT") {
     const { winner, loser } = req.body;
 
-    const w = images.find(i => i.id === winner);
-    const l = images.find(i => i.id === loser);
-
-    if (w) w.score++;
-    if (l) l.score--;
-
-    images = images.filter(img => img.score > -3);
+    await supabase.rpc('update_score', {
+      winner_id: winner,
+      loser_id: loser
+    });
 
     return res.status(200).json({ ok: true });
   }

@@ -6,18 +6,10 @@ export default async function handler(req, res) {
   }
 
   try {
-    const baseUrl =
-      req.headers.origin ||
-      `https://${req.headers.host}`;
+    // 🔥 キャッシュ回避（超重要）
+    const seed = Date.now();
 
-    // 画像一覧取得
-    const imagesRes = await fetch(`${baseUrl}/api/images`);
-    const imagesData = await imagesRes.json();
-    const images = imagesData.images || [];
-
-    console.log("images:", images);
-
-    // 🔥 顔生成専用プロンプト（強化版）
+    // 🔥 女性固定プロンプト（強化）
     const prompt = `
 ultra realistic portrait of a beautiful japanese woman,
 solo, looking at camera,
@@ -29,7 +21,7 @@ high detail, photorealistic,
 no blur, no distortion
 `;
 
-    // 🔥 生成開始（モデル変更済み）
+    // 🔥 生成開始
     const start = await fetch("https://api.replicate.com/v1/predictions", {
       method: "POST",
       headers: {
@@ -43,13 +35,13 @@ no blur, no distortion
           width: 512,
           height: 768,
           num_inference_steps: 30,
-          guidance_scale: 7.5
+          guidance_scale: 7.5,
+          seed: seed // ←これ重要（毎回違う顔）
         }
       })
     });
 
     const startData = await start.json();
-    console.log("START:", startData);
 
     if (!startData.urls?.get) {
       return res.status(500).json({ error: "開始失敗", detail: startData });
@@ -58,6 +50,8 @@ no blur, no distortion
     const getUrl = startData.urls.get;
 
     let result;
+
+    // 🔥 完了待ち
     for (let i = 0; i < 25; i++) {
       await new Promise(r => setTimeout(r, 1500));
 
@@ -66,34 +60,33 @@ no blur, no distortion
       });
 
       result = await check.json();
-      console.log("RESULT:", result);
 
       if (result.status === "succeeded") break;
     }
 
+    // 🔥 成功
     if (result.status === "succeeded") {
-      const imageUrl = Array.isArray(result.output)
+      let imageUrl = Array.isArray(result.output)
         ? result.output[0]
         : result.output;
 
-      console.log("生成成功:", imageUrl);
+      // 🔥 さらにキャッシュ回避
+      imageUrl += "?t=" + Date.now();
 
       return res.status(200).json({ image: imageUrl });
-    } else {
-      console.log("生成失敗:", result);
-
-      // fallback（必ず画像返す）
-      return res.status(200).json({
-        image: "https://picsum.photos/512/768?random=" + Math.random()
-      });
     }
+
+    // 🔥 fallback（必ず違う画像）
+    return res.status(200).json({
+      image: "https://picsum.photos/512/768?random=" + Date.now()
+    });
 
   } catch (e) {
     console.error("ERROR:", e);
 
-    // fallback
+    // 🔥 fallback
     return res.status(200).json({
-      image: "https://picsum.photos/512/768?random=" + Math.random()
+      image: "https://picsum.photos/512/768?random=" + Date.now()
     });
   }
 }

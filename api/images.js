@@ -6,31 +6,48 @@ const supabase = createClient(
 );
 
 export default async function handler(req, res) {
+  const { data, error } = await supabase
+    .from('images')
+    .select('*')
+    .order('created_at', { ascending: false });
 
-  if (req.method === "GET") {
-    const { data } = await supabase
-      .from('images')
-      .select('*');
+  if (error) {
+    return res.status(500).json({ error });
+  }
 
+  if (!data || data.length < 2) {
     return res.status(200).json({ images: data });
   }
 
-  if (req.method === "POST") {
-    const { url } = req.body;
+  // シャッフル（元配列壊さない）
+  const shuffled = [...data].sort(() => 0.5 - Math.random());
 
-    await supabase.from('images').insert({ url });
+  const selected = [];
 
-    return res.status(200).json({ ok: true });
+  for (let i = 0; i < shuffled.length; i++) {
+    const item = shuffled[i];
+
+    // nullは除外
+    if (!item.url) continue;
+
+    if (selected.length === 0) {
+      selected.push(item);
+    } else {
+      if (
+        item.id !== selected[0].id &&
+        item.url !== selected[0].url
+      ) {
+        selected.push(item);
+        break;
+      }
+    }
   }
 
-  if (req.method === "PUT") {
-    const { winner, loser } = req.body;
-
-    await supabase.rpc('update_score', {
-      winner_id: winner,
-      loser_id: loser
-    });
-
-    return res.status(200).json({ ok: true });
+  // 万が一2枚取れなかった場合
+  if (selected.length < 2) {
+    const fallback = data.filter(d => d.url).slice(0, 2);
+    return res.status(200).json({ images: fallback });
   }
+
+  return res.status(200).json({ images: selected });
 }

@@ -15,7 +15,7 @@ ultra realistic portrait of a beautiful japanese woman,
 solo, looking at camera,
 symmetrical face, perfect face,
 natural skin texture, pores visible,
-85mm lens, f1.8, sharp focus,
+85mm lens, f1.8,
 soft studio lighting,
 photorealistic, high detail
 `;
@@ -23,10 +23,11 @@ photorealistic, high detail
     const negative_prompt = `
 male, man, boy,
 multiple people,
-landscape, scenery, background only,
-blurry, low quality, deformed, ugly face
+landscape, scenery,
+blurry, low quality, deformed
 `;
 
+    // 🔥 生成開始
     const start = await fetch("https://api.replicate.com/v1/predictions", {
       method: "POST",
       headers: {
@@ -49,14 +50,22 @@ blurry, low quality, deformed, ugly face
 
     const startData = await start.json();
 
+    // 🔥 429対策（ここ超重要）
+    if (startData.status === 429 || startData.detail?.includes("rate")) {
+      await new Promise(r => setTimeout(r, 9000));
+      return res.status(200).json({
+        image: "https://thispersondoesnotexist.com/?" + Date.now()
+      });
+    }
+
     if (!startData.urls?.get) {
       throw new Error("生成開始失敗");
     }
 
     const getUrl = startData.urls.get;
-
     let result;
 
+    // 🔥 最大40秒待機
     for (let i = 0; i < 20; i++) {
       await new Promise(r => setTimeout(r, 2000));
 
@@ -69,28 +78,29 @@ blurry, low quality, deformed, ugly face
       if (result.status === "succeeded") break;
     }
 
+    let imageUrl;
+
     if (result.status === "succeeded") {
-      const imageUrl = Array.isArray(result.output)
+      imageUrl = Array.isArray(result.output)
         ? result.output[0]
         : result.output;
-
-      // 🔥 ここ追加（超重要）
-      await fetch(`${baseUrl}/api/save`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          image_url: imageUrl
-        })
-      });
-
-      return res.status(200).json({ image: imageUrl });
+    } else {
+      // 🔥 fallback
+      imageUrl = "https://thispersondoesnotexist.com/?" + Date.now();
     }
 
-    return res.status(200).json({
-      image: "https://thispersondoesnotexist.com/?" + Date.now()
+    // 🔥 必ず保存
+    await fetch(`${baseUrl}/api/save`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        image_url: imageUrl
+      })
     });
+
+    return res.status(200).json({ image: imageUrl });
 
   } catch (e) {
     console.error(e);

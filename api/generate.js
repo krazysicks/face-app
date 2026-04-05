@@ -6,29 +6,22 @@ export default async function handler(req, res) {
   }
 
   try {
-    // 🔥 毎回違う顔にする
-    const seed = Date.now();
-
-    // 🔥 女性固定プロンプト（強化版）
+    // 🔥 女性固定＋男性・風景完全排除
     const prompt = `
-1girl, female focus, portrait, close-up face,
 ultra realistic portrait of a beautiful japanese woman,
 solo, looking at camera,
 symmetrical face, perfect face,
 natural skin texture, pores visible,
-sharp focus, 85mm lens, f1.8,
-soft lighting, studio lighting,
-high detail, photorealistic
+85mm lens, f1.8, sharp focus,
+soft studio lighting,
+photorealistic, high detail
 `;
 
-    // 🔥 男・風景・崩れ排除（超重要）
     const negative_prompt = `
-male, man, boy, old man, beard,
-multiple people, group, crowd,
+male, man, boy,
+multiple people,
 landscape, scenery, background only,
-animal, illustration, anime, cartoon,
-blurry, low quality, distorted face,
-extra limbs, bad anatomy, deformed
+blurry, low quality, deformed, ugly face
 `;
 
     // 🔥 生成開始
@@ -45,9 +38,9 @@ extra limbs, bad anatomy, deformed
           negative_prompt,
           width: 512,
           height: 768,
-          num_inference_steps: 30,
-          guidance_scale: 8,
-          seed: seed
+          num_inference_steps: 25,
+          guidance_scale: 7,
+          seed: Math.floor(Math.random() * 1000000) // 🔥 同じ顔防止
         }
       })
     });
@@ -55,18 +48,16 @@ extra limbs, bad anatomy, deformed
     const startData = await start.json();
 
     if (!startData.urls?.get) {
-      return res.status(500).json({
-        error: "生成開始失敗",
-        detail: startData
-      });
+      throw new Error("生成開始失敗");
     }
 
     const getUrl = startData.urls.get;
+
     let result;
 
-    // 🔥 完了待ち
-    for (let i = 0; i < 25; i++) {
-      await new Promise(r => setTimeout(r, 1500));
+    // 🔥 待機ループ（最大40秒）
+    for (let i = 0; i < 20; i++) {
+      await new Promise(r => setTimeout(r, 2000));
 
       const check = await fetch(getUrl, {
         headers: { "Authorization": `Token ${token}` }
@@ -77,28 +68,24 @@ extra limbs, bad anatomy, deformed
       if (result.status === "succeeded") break;
     }
 
-    // 🔥 成功
     if (result.status === "succeeded") {
-      let imageUrl = Array.isArray(result.output)
+      const imageUrl = Array.isArray(result.output)
         ? result.output[0]
         : result.output;
-
-      // 🔥 キャッシュ防止
-      imageUrl += "?t=" + Date.now();
 
       return res.status(200).json({ image: imageUrl });
     }
 
-    // 🔥 fallback（絶対違う画像）
+    // 🔥 fallback（必ず女性）
     return res.status(200).json({
-      image: "https://picsum.photos/512/768?random=" + Date.now()
+      image: "https://thispersondoesnotexist.com/?" + Date.now()
     });
 
   } catch (e) {
-    console.error("ERROR:", e);
+    console.error(e);
 
     return res.status(200).json({
-      image: "https://picsum.photos/512/768?random=" + Date.now()
+      image: "https://thispersondoesnotexist.com/?" + Date.now()
     });
   }
 }

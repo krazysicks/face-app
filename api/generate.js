@@ -6,7 +6,10 @@ export default async function handler(req, res) {
   }
 
   try {
-    // 🔥 女性固定＋男性・風景完全排除
+    const baseUrl =
+      req.headers.origin ||
+      `https://${req.headers.host}`;
+
     const prompt = `
 ultra realistic portrait of a beautiful japanese woman,
 solo, looking at camera,
@@ -24,7 +27,6 @@ landscape, scenery, background only,
 blurry, low quality, deformed, ugly face
 `;
 
-    // 🔥 生成開始
     const start = await fetch("https://api.replicate.com/v1/predictions", {
       method: "POST",
       headers: {
@@ -40,7 +42,7 @@ blurry, low quality, deformed, ugly face
           height: 768,
           num_inference_steps: 25,
           guidance_scale: 7,
-          seed: Math.floor(Math.random() * 1000000) // 🔥 同じ顔防止
+          seed: Math.floor(Math.random() * 1000000)
         }
       })
     });
@@ -55,7 +57,6 @@ blurry, low quality, deformed, ugly face
 
     let result;
 
-    // 🔥 待機ループ（最大40秒）
     for (let i = 0; i < 20; i++) {
       await new Promise(r => setTimeout(r, 2000));
 
@@ -73,10 +74,20 @@ blurry, low quality, deformed, ugly face
         ? result.output[0]
         : result.output;
 
+      // 🔥 ここ追加（超重要）
+      await fetch(`${baseUrl}/api/save`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          image_url: imageUrl
+        })
+      });
+
       return res.status(200).json({ image: imageUrl });
     }
 
-    // 🔥 fallback（必ず女性）
     return res.status(200).json({
       image: "https://thispersondoesnotexist.com/?" + Date.now()
     });

@@ -31,30 +31,48 @@ export default async function handler(req, res) {
         })
       });
 
+      // 🚨 HTTPエラーチェック
+      if (!start.ok) {
+        const text = await start.text();
+        console.error("START HTTP ERROR:", text);
+        throw new Error("Replicate start failed");
+      }
+
       const startData = await start.json();
       console.log("START:", startData);
 
-      if (startData.urls?.get) {
-        let result;
+      // 🚨 URL取得できない場合
+      if (!startData.urls?.get) {
+        console.error("START ERROR:", startData);
+        throw new Error("Start failed");
+      }
 
-        for (let i = 0; i < 15; i++) {
-          await new Promise(r => setTimeout(r, 2000));
+      let result;
 
-          const check = await fetch(startData.urls.get, {
-            headers: { "Authorization": `Token ${token}` }
-          });
+      // 🔁 ステータス確認ループ
+      for (let i = 0; i < 20; i++) {
+        await new Promise(r => setTimeout(r, 3000)); // ← 3秒待機
 
-          result = await check.json();
-          console.log("CHECK:", result.status);
+        const check = await fetch(startData.urls.get, {
+          headers: { "Authorization": `Token ${token}` }
+        });
 
-          if (result.status === "succeeded") break;
+        result = await check.json();
+        console.log("CHECK:", result.status);
+
+        if (result.status === "succeeded") break;
+
+        if (result.status === "failed") {
+          console.error("REPLICATE FAILED:", result);
+          throw new Error(result.error || "Replicate failed");
         }
+      }
 
-        if (result?.output) {
-          imageUrl = Array.isArray(result.output)
-            ? result.output[0]
-            : result.output;
-        }
+      // 画像取得
+      if (result?.output) {
+        imageUrl = Array.isArray(result.output)
+          ? result.output[0]
+          : result.output;
       }
     }
 
@@ -62,13 +80,14 @@ export default async function handler(req, res) {
     // 🔥 fallback（必ず画像）
     // =========================
     if (!imageUrl) {
+      console.warn("⚠ fallback使用");
       imageUrl = "https://thispersondoesnotexist.com/?" + Date.now();
     }
 
     console.log("FINAL IMAGE:", imageUrl);
 
     // =========================
-    // 🔥 保存（ここが本命）
+    // 🔥 保存
     // =========================
     const saveRes = await fetch(`${baseUrl}/api/save`, {
       method: "POST",
@@ -85,14 +104,14 @@ export default async function handler(req, res) {
 
     return res.status(200).json({
       image: imageUrl,
-      save: saveData // ←確認用
+      save: saveData
     });
 
   } catch (e) {
-    console.error("ERROR:", e);
+    console.error("❌ ERROR:", e);
 
     return res.status(500).json({
-      error: "生成失敗"
+      error: e.message || "生成失敗"
     });
   }
 }

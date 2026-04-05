@@ -6,19 +6,29 @@ export default async function handler(req, res) {
   }
 
   try {
-    // 🔥 キャッシュ回避（超重要）
+    // 🔥 毎回違う顔にする
     const seed = Date.now();
 
-    // 🔥 女性固定プロンプト（強化）
+    // 🔥 女性固定プロンプト（強化版）
     const prompt = `
+1girl, female focus, portrait, close-up face,
 ultra realistic portrait of a beautiful japanese woman,
 solo, looking at camera,
 symmetrical face, perfect face,
 natural skin texture, pores visible,
 sharp focus, 85mm lens, f1.8,
 soft lighting, studio lighting,
-high detail, photorealistic,
-no blur, no distortion
+high detail, photorealistic
+`;
+
+    // 🔥 男・風景・崩れ排除（超重要）
+    const negative_prompt = `
+male, man, boy, old man, beard,
+multiple people, group, crowd,
+landscape, scenery, background only,
+animal, illustration, anime, cartoon,
+blurry, low quality, distorted face,
+extra limbs, bad anatomy, deformed
 `;
 
     // 🔥 生成開始
@@ -32,11 +42,12 @@ no blur, no distortion
         version: "ac732df83cea7fffcb7f3a2f4a9e3a5a3f9e6e4b07c6fba58828a741b93d7c5d",
         input: {
           prompt,
+          negative_prompt,
           width: 512,
           height: 768,
           num_inference_steps: 30,
-          guidance_scale: 7.5,
-          seed: seed // ←これ重要（毎回違う顔）
+          guidance_scale: 8,
+          seed: seed
         }
       })
     });
@@ -44,11 +55,13 @@ no blur, no distortion
     const startData = await start.json();
 
     if (!startData.urls?.get) {
-      return res.status(500).json({ error: "開始失敗", detail: startData });
+      return res.status(500).json({
+        error: "生成開始失敗",
+        detail: startData
+      });
     }
 
     const getUrl = startData.urls.get;
-
     let result;
 
     // 🔥 完了待ち
@@ -70,13 +83,13 @@ no blur, no distortion
         ? result.output[0]
         : result.output;
 
-      // 🔥 さらにキャッシュ回避
+      // 🔥 キャッシュ防止
       imageUrl += "?t=" + Date.now();
 
       return res.status(200).json({ image: imageUrl });
     }
 
-    // 🔥 fallback（必ず違う画像）
+    // 🔥 fallback（絶対違う画像）
     return res.status(200).json({
       image: "https://picsum.photos/512/768?random=" + Date.now()
     });
@@ -84,7 +97,6 @@ no blur, no distortion
   } catch (e) {
     console.error("ERROR:", e);
 
-    // 🔥 fallback
     return res.status(200).json({
       image: "https://picsum.photos/512/768?random=" + Date.now()
     });

@@ -1,53 +1,33 @@
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_KEY
-);
-
 export default async function handler(req, res) {
-  const { data, error } = await supabase
-    .from('images')
-    .select('*')
-    .order('created_at', { ascending: false });
+  const baseUrl =
+    req.headers.origin ||
+    `https://${req.headers.host}`;
 
-  if (error) {
-    return res.status(500).json({ error });
+  // 🔥 画像取得
+  let imagesRes = await fetch(`${baseUrl}/api/get-images`);
+  let data = await imagesRes.json();
+  let images = data.images || [];
+
+  // 🔥 足りない分だけ生成（429対策で待機）
+  while (images.length < 2) {
+    await fetch(`${baseUrl}/api/generate`);
+
+    // 🔥 ここ超重要（429防止）
+    await new Promise(r => setTimeout(r, 9000));
+
+    imagesRes = await fetch(`${baseUrl}/api/get-images`);
+    data = await imagesRes.json();
+    images = data.images || [];
   }
 
-  if (!data || data.length < 2) {
-    return res.status(200).json({ images: data });
-  }
+  // 🔥 ランダム2枚（完全重複防止）
+  const shuffled = images.sort(() => 0.5 - Math.random());
 
-  // シャッフル（元配列壊さない）
-  const shuffled = [...data].sort(() => 0.5 - Math.random());
+  let first = shuffled[0];
+  let second = shuffled.find(img => img.id !== first.id);
 
-  const selected = [];
+  // 念のためfallback
+  if (!second) second = shuffled[1];
 
-  for (let i = 0; i < shuffled.length; i++) {
-    const item = shuffled[i];
-
-    // nullは除外
-    if (!item.url) continue;
-
-    if (selected.length === 0) {
-      selected.push(item);
-    } else {
-      if (
-        item.id !== selected[0].id &&
-        item.url !== selected[0].url
-      ) {
-        selected.push(item);
-        break;
-      }
-    }
-  }
-
-  // 万が一2枚取れなかった場合
-  if (selected.length < 2) {
-    const fallback = data.filter(d => d.url).slice(0, 2);
-    return res.status(200).json({ images: fallback });
-  }
-
-  return res.status(200).json({ images: selected });
+  res.json({ images: [first, second] });
 }

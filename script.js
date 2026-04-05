@@ -30,7 +30,8 @@ function showImage(n, url) {
     error.style.display = "block";
   };
 
-  img.src = url;
+  // 🔥 キャッシュ完全破壊（同じ画像対策）
+  img.src = url + "?v=" + Date.now() + Math.random();
 }
 
 async function loadImages() {
@@ -39,6 +40,7 @@ async function loadImages() {
   let res = await fetch("/api/images");
   let data = await res.json();
 
+  // 足りなければ生成
   while (data.images.length < 2) {
     const gen = await fetch("/api/generate");
     const g = await gen.json();
@@ -48,15 +50,29 @@ async function loadImages() {
     await fetch("/api/images", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ url: g.image })
+      body: JSON.stringify({
+        url: g.image // ← そのままでOK
+      })
     });
 
     res = await fetch("/api/images");
     data = await res.json();
   }
 
-  const shuffled = [...data.images].sort(() => 0.5 - Math.random());
-  currentImages = shuffled.slice(0, 2);
+  // 🔥 重複防止ランダム
+  const shuffled = [...data.images]
+    .filter(img => img.url) // null除外
+    .sort(() => 0.5 - Math.random());
+
+  let first = shuffled[0];
+  let second = shuffled.find(
+    img => img.id !== first.id && img.url !== first.url
+  );
+
+  // fallback
+  if (!second) second = shuffled[1];
+
+  currentImages = [first, second];
 
   console.log("表示:", currentImages);
 

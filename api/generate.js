@@ -19,7 +19,7 @@ export default async function handler(req, res) {
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          version: "ac732df83cea7fffcb7f3a2f4a9e3a5a3f9e6e4b07c6fba58828a741b93d7c5d",
+model: "stability-ai/sdxl"
           input: {
             prompt: "ultra realistic portrait of a beautiful japanese woman",
             negative_prompt: "male, man, multiple people, landscape",

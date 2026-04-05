@@ -7,12 +7,9 @@ export default async function handler(req, res) {
   let data = await imagesRes.json();
   let images = data.images || [];
 
-  // 🔥 足りない分だけ生成（間隔あける）
   while (images.length < 2) {
     await fetch(`${baseUrl}/api/generate`);
-
-    // 🔥 429回避
-    await new Promise(r => setTimeout(r, 9000));
+    await new Promise(r => setTimeout(r, 3000));
 
     imagesRes = await fetch(`${baseUrl}/api/get-images`);
     data = await imagesRes.json();
